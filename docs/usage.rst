@@ -2,6 +2,6 @@
 Usage
 ========
 
-To use Asyncio HTTP Server in a project::
+To use the program, first install it and then::
 
-    import httpserver
+    $ httpserver --help
