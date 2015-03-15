@@ -8,11 +8,12 @@ __email__ = 'thom@thomwiggers.nl'
 __version__ = '0.1.0'
 
 
-def _start_server(bindaddr, port):
+def _start_server(bindaddr, port, folder):
     import asyncio
     from .httpserver import HttpProtocol
     loop = asyncio.get_event_loop()
-    coroutine = loop.create_server(HttpProtocol, bindaddr, port)
+    coroutine = loop.create_server(lambda: HttpProtocol(folder), bindaddr,
+                                   port)
     server = loop.run_until_complete(coroutine)
 
     print('Starting server on {}'.format(server.sockets[0].getsockname()))
@@ -25,17 +26,23 @@ def _start_server(bindaddr, port):
 def run(argv=None):  # pragma: no cover
     """Run the HTTP server
 
-    Usage: httpserver [options] [<bindaddress>] [<port>]
+    Usage: httpserver [options] [<folder>]
 
     Default bind address: 127.0.0.1
     Default port:         8080
 
     Options::
+        -a,--bindaddress=<address>  Address to bind to (default 127.0.0.1)
+        -p,--port=<port>            Port to listen on (default 8080)
+        -v,--verbose                Increase verbosity
+        -d,--debug                  Print debug output
 
-        -v,--verbose        Increase verbosity
-        -d,--debug          Add debug commands/utils
+    To listen on all (ipv4) addresses on port 80:
+
+        httpserver -a 0.0.0.0 -p 80
     """
     import sys
+    import os
     import docopt
     import textwrap
     argv = argv or sys.argv[1:]
@@ -51,6 +58,7 @@ def run(argv=None):  # pragma: no cover
     logger = logging.getLogger('run method')
     logger.debug('CLI args: %s' % args)
 
-    bindaddr = args['<bindaddress>'] or '127.0.0.1'
-    port = args['<port>'] or '8080'
-    _start_server(bindaddr, port)
+    bindaddr = args['--bindaddress'] or '127.0.0.1'
+    port = args['--port'] or '8080'
+    folder = args['<folder>'] or os.getcwd()
+    _start_server(bindaddr, port, folder)
