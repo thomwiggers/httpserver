@@ -38,15 +38,20 @@ class HttpProtocol(asyncio.Protocol):
         self.logger.debug('Instantiated HttpProtocol')
 
     def _write_transport(self, string):
-        self.transport.write(string.encode('utf-8'))
+        if isinstance(string, str):
+            self.transport.write(string.encode('utf-8'))
+        else:
+            self.transport.write(string)
 
     def _write_response(self, response):
         status = '{} {} {}\r\n'.format(response['version'],
                                        response['code'],
                                        responses[response['code']])
+        self.logger.debug("Responding status: '%s'", status.strip())
         self._write_transport(status)
 
         for (header, content) in response['headers'].items():
+            self.logger.debug("Sending header: '%s: %s'", header, content)
             self._write_transport('{}: {}\r\n'.format(header, content))
 
         self._write_transport('\r\n')
@@ -108,9 +113,10 @@ class HttpProtocol(asyncio.Protocol):
         if not os.path.isfile(filename):
             raise InvalidRequestError(404, 'Not Found')
 
-        response['headers']['Content-Type'] = mimetypes.guess_type(filename)
+        response['headers']['Content-Type'] = mimetypes.guess_type(
+            filename)[0] or 'text/plain'
 
-        with open(filename, 'r') as fp:
+        with open(filename, 'rb') as fp:
             response['body'] = fp.read()
 
         self._write_response(response)
@@ -124,5 +130,8 @@ class InvalidRequestError(Exception):
     def get_http_response(self):
         return _get_response(
             code=self.code,
-            body=str(self)
+            body=str(self),
+            headers={
+                'Content-Type': 'text/plain'
+            }
         )
