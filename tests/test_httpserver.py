@@ -58,7 +58,7 @@ class TestHttpserver(unittest.TestCase):
         head, body = response.split(b'\r\n\r\n', 1)
         # Do we have the error
         assert head.startswith(b'HTTP/1.1 505 HTTP Version Not Supported')
-        assert 'Content-Length' in head  # We SHOULD have an entity (10.5.6)
+        assert b'Content-Length' in head  # We SHOULD have an entity (10.5.6)
         assert b'HTTP 1.1' in body  # We should reply what is supported
 
     def test_get_index_root(self):
@@ -70,7 +70,7 @@ class TestHttpserver(unittest.TestCase):
         response = self._sent()
         assert response.startswith(b'HTTP/1.1 200 OK\r\n')
         head, body = response.split(b'\r\n\r\n', 1)
-        assert b'Content-Length: {}'.format(len(body)) in head
+        assert 'Content-Length: {}'.format(len(body)).encode('utf-8') in head
         assert body == index
 
     def test_get_index_named(self):
@@ -81,6 +81,7 @@ class TestHttpserver(unittest.TestCase):
         response = self._sent()
         assert response.startswith(b'HTTP/1.1 200 OK\r\n')
         head, body = response.split(b'\r\n', 1)
+        assert 'Content-Length: {}'.format(len(body)).encode('utf-8') in head
         assert b'Content-Length: {}'.format(len(body)) in head
         assert body == index
 
