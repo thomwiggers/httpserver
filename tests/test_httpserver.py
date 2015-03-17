@@ -7,18 +7,18 @@ test_httpserver
 
 Tests for `httpserver` module.
 """
-
+import os
 import unittest
 from unittest import mock
-import os
 
 from httpserver.httpserver import HttpProtocol
+
 
 class TestHttpserver(unittest.TestCase):
 
     def setUp(self):
         self.fixtures_location = os.path.join(
-                os.path.dirname(__file__), 'fixtures')
+            os.path.dirname(__file__), 'fixtures')
         self.httpprotocol = HttpProtocol(self.fixtures_location)
         self.transport = mock.MagicMock(spec=['write', 'close'])
         self.transport.write = mock.Mock()
@@ -33,7 +33,7 @@ class TestHttpserver(unittest.TestCase):
 
     def _sent(self):
         values = [tuple(c)[0][0]
-                for c in self.httpprotocol.transport.write.call_args_list]
+                  for c in self.httpprotocol.transport.write.call_args_list]
         self.httpprotocol.transport.write.reset_mock()
         return b''.join(values)
 

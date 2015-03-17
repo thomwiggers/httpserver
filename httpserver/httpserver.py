@@ -53,7 +53,8 @@ class HttpProtocol(asyncio.Protocol):
             self._write_transport('{}: {}\r\n'.format(header, content))
 
         if 'body' in response and 'Content-Length' not in response['headers']:
-            self._write_transport('{}: {}\r\n'.format('Content-Length', len(response['body'])))
+            self._write_transport(
+                'Content-Length: {}\r\n'.format(len(response['body'])))
 
         self._write_transport('\r\n')
         if 'body' in response:
