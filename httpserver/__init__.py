@@ -3,8 +3,8 @@ from __future__ import unicode_literals, absolute_import, print_function
 
 import logging
 
-__author__ = 'Thom Wiggers'
-__email__ = 'thom@thomwiggers.nl'
+__author__ = 'Thom Wiggers, Luuk Scholten'
+__email__ = 'thom@thomwiggers.nl, info@luukscholten.com'
 __version__ = '0.1.0'
 
 

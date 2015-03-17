@@ -18,8 +18,6 @@ def _get_response(**kwargs):
         kwargs['code'] = 200
     if 'headers' not in kwargs:
         kwargs['headers'] = dict()
-    if 'body' not in kwargs:
-        kwargs['body'] = ''
     if 'version' not in kwargs:
         kwargs['version'] = 'HTTP/1.1'
 
@@ -54,8 +52,12 @@ class HttpProtocol(asyncio.Protocol):
             self.logger.debug("Sending header: '%s: %s'", header, content)
             self._write_transport('{}: {}\r\n'.format(header, content))
 
+        if 'body' in response and 'Content-Length' not in response['headers']:
+            self._write_transport('{}: {}\r\n'.format('Content-Length', len(response['body'])))
+
         self._write_transport('\r\n')
-        self._write_transport(response['body'])
+        if 'body' in response:
+            self._write_transport(response['body'])
 
     def connection_made(self, transport):
         self.logger.info('Connection made at object %s', id(self))
