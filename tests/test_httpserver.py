@@ -82,7 +82,6 @@ class TestHttpserver(unittest.TestCase):
         assert response.startswith(b'HTTP/1.1 200 OK\r\n')
         head, body = response.split(b'\r\n\r\n', 1)
         assert 'Content-Length: {}'.format(len(body)).encode('utf-8') in head
-        assert b'Content-Length: {}'.format(len(body)) in head
         assert body == index
 
         # Has the connection been closed (no Keep-Alive)
