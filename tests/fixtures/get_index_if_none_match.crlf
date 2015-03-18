@@ -1,0 +1,2 @@
+GET /index.html HTTP/1.1
+If-None-Match: "bf21f01750c6574a6e6b3d937b2285289de37ff2"

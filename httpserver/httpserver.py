@@ -188,7 +188,13 @@ class HttpProtocol(asyncio.Protocol):
             response['body'] = fp.read()
             sha1.update(response['body'])
 
-        response['headers']['Etag'] = '"{}"'.format(sha1.hexdigest())
+        etag = sha1.hexdigest()
+
+        # Create 304 response if if-none-match matches etag
+        if request.get('If-None-Match') == '"{}"'.format(etag):
+            response = _get_response(code=304)
+
+        response['headers']['Etag'] = '"{}"'.format(etag)
 
         self._write_response(response)
 

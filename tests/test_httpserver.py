@@ -9,6 +9,7 @@ Tests for `httpserver` module.
 """
 import os
 import unittest
+import hashlib
 from unittest import mock
 from freezegun import freeze_time
 
@@ -159,6 +160,32 @@ class TestHttpserver(unittest.TestCase):
 
             assert b'Date: ' in head
             assert b'Date: Sat, 14 Mar 2015 09:26:53 +0000' in head
+
+    def test_get_with_etag(self):
+        """Test GET /index.html"""
+        request = self._read_fixture('get_index_named.crlf')
+        index = self._read_fixture('index.html')
+        self.httpprotocol.data_received(request)
+        response = self._sent()
+        head, body = response.split(b'\r\n\r\n', 1)
+
+        sha1 = hashlib.sha1()
+        sha1.update(body)
+        etag = sha1.hexdigest()
+
+        assert 'Etag: "{}"'.format(etag).encode('utf-8') in head
+
+        request = self._read_fixture('get_index_if_none_match.crlf')
+        assert etag.encode('utf-8') in request
+
+        self.httpprotocol.data_received(request)
+        response = self._sent()
+        head, body = response.split(b'\r\n\r\n', 1)
+
+        assert head.startswith(b'HTTP/1.1 304 Not Modified\r\n')
+        assert b'Date: ' in head
+        assert 'Etag: "{}"'.format(etag).encode('utf-8') in head
+
 
     def tearDown(self):
         pass
