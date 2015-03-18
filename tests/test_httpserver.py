@@ -59,7 +59,7 @@ class TestHttpserver(unittest.TestCase):
         # Do we have the error
         assert head.startswith(b'HTTP/1.1 505 HTTP Version Not Supported')
         assert b'Content-Length' in head  # We SHOULD have an entity (10.5.6)
-        assert b'HTTP/1.1' in body  # We should reply what is supported
+        assert b'HTTP/1.1' in body  # We SHOULD reply what is supported
 
     def test_get_index_root(self):
         """Test GET /"""
