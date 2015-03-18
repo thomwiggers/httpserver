@@ -87,6 +87,17 @@ class TestHttpserver(unittest.TestCase):
         # Has the connection been closed (no Keep-Alive)
         assert self.transport.close.called
 
+    def test_get_directory_without_index(self):
+        """Test GET /emptydir"""
+        data = self._read_fixture('no_index_dir/get_directory_without_index.crlf')
+        self.httpprotocol.data_received(data)
+        response = self._sent()
+
+        head, body = response.split(b'\r\n\r\n', 1)
+        # Do we have the 404 error
+        assert head.startswith(b'HTTP/1.1 404 Not Found\r\n')
+        ##TODO more tests here
+
     def tearDown(self):
         pass
 
