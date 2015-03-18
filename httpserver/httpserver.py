@@ -9,7 +9,6 @@ import mimetypes
 
 import asyncio
 import logging
-import socket
 import hashlib
 from datetime import datetime
 
@@ -55,12 +54,12 @@ class HttpProtocol(asyncio.Protocol):
         if 'body' in response and 'Content-Length' not in response['headers']:
             response['headers']['Content-Length'] = len(response['body'])
 
-        response['headers']['Date'] = datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S +0000")
+        response['headers']['Date'] = datetime.utcnow().strftime(
+            "%a, %d %b %Y %H:%M:%S +0000")
 
         for (header, content) in response['headers'].items():
             self.logger.debug("Sending header: '%s: %s'", header, content)
             self._write_transport('{}: {}\r\n'.format(header, content))
-
 
         self._write_transport('\r\n')
         if 'body' in response:

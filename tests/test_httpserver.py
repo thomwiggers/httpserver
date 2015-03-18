@@ -96,7 +96,8 @@ class TestHttpserver(unittest.TestCase):
 
     def test_get_directory_without_index(self):
         """Test GET /emptydir"""
-        data = self._read_fixture('no_index_dir/get_directory_without_index.crlf')
+        data = self._read_fixture(
+            'no_index_dir/get_directory_without_index.crlf')
         self.httpprotocol.data_received(data)
         response = self._sent()
 
@@ -147,10 +148,11 @@ class TestHttpserver(unittest.TestCase):
     def test_get_has_date_headers(self):
         """Test for date headers"""
         requests = [
-                self._read_fixture('get_index_named.crlf'), #200
-                self._read_fixture('no_index_dir/get_directory_without_index.crlf'), #404
-                self._read_fixture('invalid_version.crlf'), #505
-                ]
+            self._read_fixture('get_index_named.crlf'),  # 200
+            self._read_fixture(
+                'no_index_dir/get_directory_without_index.crlf'),  # 404
+            self._read_fixture('invalid_version.crlf'),  # 505
+        ]
 
         for request in requests:
             self.httpprotocol.data_received(request)
@@ -172,8 +174,12 @@ class TestHttpserver(unittest.TestCase):
         sha1 = hashlib.sha1()
         sha1.update(body)
         etag = sha1.hexdigest()
+        sha1 = hashlib.sha1()
+        sha1.update(index)
+        etag_index = sha1.hexdigest()
 
         assert 'Etag: "{}"'.format(etag).encode('utf-8') in head
+        assert etag == etag_index
 
         request = self._read_fixture('get_index_if_none_match.crlf')
         assert etag.encode('utf-8') in request
@@ -186,9 +192,6 @@ class TestHttpserver(unittest.TestCase):
         assert b'Date: ' in head
         assert 'Etag: "{}"'.format(etag).encode('utf-8') in head
 
-
-    def tearDown(self):
-        pass
 
 if __name__ == '__main__':
     unittest.main()
