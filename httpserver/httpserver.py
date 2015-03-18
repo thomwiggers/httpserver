@@ -10,6 +10,7 @@ import mimetypes
 import asyncio
 import logging
 import socket
+import hashlib
 
 logger = logging.getLogger(__name__)
 
@@ -178,8 +179,13 @@ class HttpProtocol(asyncio.Protocol):
         response['headers']['Content-Type'] = mimetypes.guess_type(
             filename)[0] or 'text/plain'
 
+        sha1 = hashlib.sha1()
+
         with open(filename, 'rb') as fp:
             response['body'] = fp.read()
+            sha1.update(response['body'])
+
+        response['headers']['Etag'] = '"{}"'.format(sha1.hexdigest())
 
         self._write_response(response)
 
