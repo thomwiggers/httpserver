@@ -9,7 +9,9 @@ Tests for `httpserver` module.
 """
 import os
 import unittest
+import hashlib
 from unittest import mock
+from freezegun import freeze_time
 
 from httpserver.httpserver import HttpProtocol
 
@@ -140,6 +142,50 @@ class TestHttpserver(unittest.TestCase):
         assert head.startswith(b'HTTP/1.1 200 OK')
         assert body == index
         assert self.transport.close.called
+
+    @freeze_time("2015-03-14 09:26:53", tz_offset=0)
+    def test_get_has_date_headers(self):
+        """Test for date headers"""
+        requests = [
+                self._read_fixture('get_index_named.crlf'), #200
+                self._read_fixture('no_index_dir/get_directory_without_index.crlf'), #404
+                self._read_fixture('invalid_version.crlf'), #505
+                ]
+
+        for request in requests:
+            self.httpprotocol.data_received(request)
+            response = self._sent()
+
+            head, body = response.split(b'\r\n\r\n', 1)
+
+            assert b'Date: ' in head
+            assert b'Date: Sat, 14 Mar 2015 09:26:53 +0000' in head
+
+    def test_get_with_etag(self):
+        """Test GET /index.html"""
+        request = self._read_fixture('get_index_named.crlf')
+        index = self._read_fixture('index.html')
+        self.httpprotocol.data_received(request)
+        response = self._sent()
+        head, body = response.split(b'\r\n\r\n', 1)
+
+        sha1 = hashlib.sha1()
+        sha1.update(body)
+        etag = sha1.hexdigest()
+
+        assert 'Etag: "{}"'.format(etag).encode('utf-8') in head
+
+        request = self._read_fixture('get_index_if_none_match.crlf')
+        assert etag.encode('utf-8') in request
+
+        self.httpprotocol.data_received(request)
+        response = self._sent()
+        head, body = response.split(b'\r\n\r\n', 1)
+
+        assert head.startswith(b'HTTP/1.1 304 Not Modified\r\n')
+        assert b'Date: ' in head
+        assert 'Etag: "{}"'.format(etag).encode('utf-8') in head
+
 
     def tearDown(self):
         pass

@@ -10,6 +10,8 @@ import mimetypes
 import asyncio
 import logging
 import socket
+import hashlib
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -50,13 +52,15 @@ class HttpProtocol(asyncio.Protocol):
         self.logger.debug("Responding status: '%s'", status.strip())
         self._write_transport(status)
 
+        if 'body' in response and 'Content-Length' not in response['headers']:
+            response['headers']['Content-Length'] = len(response['body'])
+
+        response['headers']['Date'] = datetime.utcnow().strftime("%a, %d %b %Y %H:%M:%S +0000")
+
         for (header, content) in response['headers'].items():
             self.logger.debug("Sending header: '%s: %s'", header, content)
             self._write_transport('{}: {}\r\n'.format(header, content))
 
-        if 'body' in response and 'Content-Length' not in response['headers']:
-            self._write_transport(
-                'Content-Length: {}\r\n'.format(len(response['body'])))
 
         self._write_transport('\r\n')
         if 'body' in response:
@@ -178,8 +182,19 @@ class HttpProtocol(asyncio.Protocol):
         response['headers']['Content-Type'] = mimetypes.guess_type(
             filename)[0] or 'text/plain'
 
+        sha1 = hashlib.sha1()
+
         with open(filename, 'rb') as fp:
             response['body'] = fp.read()
+            sha1.update(response['body'])
+
+        etag = sha1.hexdigest()
+
+        # Create 304 response if if-none-match matches etag
+        if request.get('If-None-Match') == '"{}"'.format(etag):
+            response = _get_response(code=304)
+
+        response['headers']['Etag'] = '"{}"'.format(etag)
 
         self._write_response(response)
 

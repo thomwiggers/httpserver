@@ -31,7 +31,8 @@ requirements = [
 
 test_requirements = [
     'pytest',
-    'selenium'
+    'selenium',
+    'freezegun',
 ]
 
 setup(
