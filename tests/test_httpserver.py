@@ -17,27 +17,31 @@ from httpserver.httpserver import HttpProtocol
 class TestHttpserver(unittest.TestCase):
 
     def setUp(self):
+        """Set up an HttpProtocol instance with a fake transport"""
         self.fixtures_location = os.path.join(
             os.path.dirname(__file__), 'fixtures')
         self.httpprotocol = HttpProtocol('localhost', self.fixtures_location)
         self.transport = mock.MagicMock(spec=['write', 'close'])
         self.transport.write = mock.Mock()
         self.transport.close = mock.Mock()
-        self.httpprotocol.transport = self.transport
+        self.httpprotocol.connection_made(self.transport)
 
     def _read_fixture(self, filename):
+        """Convenient function to read one of our fixtures"""
         filename = os.path.join(self.fixtures_location, filename)
         with open(filename, 'rb') as f:
             content = f.read()
         return content
 
     def _sent(self):
+        """Gets the data that was written to the transport"""
         values = [tuple(c)[0][0]
-                  for c in self.httpprotocol.transport.write.call_args_list]
-        self.httpprotocol.transport.write.reset_mock()
+                  for c in self.transport.write.call_args_list]
+        self.transport.write.reset_mock()
         return b''.join(values)
 
     def test_invalid_method(self):
+        """Test if the server rejects methods it does not recognise"""
         data = self._read_fixture('invalid_method.crlf')
         self.httpprotocol.data_received(data)
 
@@ -51,6 +55,7 @@ class TestHttpserver(unittest.TestCase):
         assert self.transport.close.called
 
     def test_invalid_http_version(self):
+        """Test if the server rejects invalid HTTP headers"""
         data = self._read_fixture('invalid_version.crlf')
         self.httpprotocol.data_received(data)
         response = self._sent()
@@ -116,6 +121,25 @@ class TestHttpserver(unittest.TestCase):
         head, body = self._sent().split(b'\r\n\r\n', 1)
 
         assert head.startswith(b'HTTP/1.1 404 Not Found\r\n')
+
+    def test_get_persistent(self):
+        """Try and get index.html over the same connection"""
+        data = self._read_fixture('get_index_persistent.crlf')
+        index = self._read_fixture('index.html')
+
+        for i in range(2):
+            self.httpprotocol.data_received(data)
+            head, body = self._sent().split(b'\r\n\r\n', 1)
+            assert head.startswith(b'HTTP/1.1 200 OK')
+            assert body == index
+            assert not self.transport.close.called
+
+        data = self._read_fixture('get_index_named.crlf')
+        self.httpprotocol.data_received(data)
+        head, body = self._sent().split(b'\r\n\r\n', 1)
+        assert head.startswith(b'HTTP/1.1 200 OK')
+        assert body == index
+        assert self.transport.close.called
 
     def tearDown(self):
         pass

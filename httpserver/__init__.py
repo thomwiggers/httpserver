@@ -8,7 +8,7 @@ __email__ = 'thom@thomwiggers.nl, info@luukscholten.com'
 __version__ = '0.1.0'
 
 
-def _start_server(bindaddr, port, folder):
+def _start_server(bindaddr, port, hostname, folder):
     import asyncio
     from .httpserver import HttpProtocol
     loop = asyncio.get_event_loop()
@@ -60,5 +60,5 @@ def run(argv=None):  # pragma: no cover
     bindaddr = args['--bindaddress'] or '127.0.0.1'
     port = args['--port'] or '8080'
     folder = args['<folder>'] or os.getcwd()
-    hostname = args['<hostname>'] or 'localhost'
+    hostname = args['--host'] or 'localhost'
     _start_server(bindaddr, port, hostname, folder)

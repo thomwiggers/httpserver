@@ -63,9 +63,22 @@ class HttpProtocol(asyncio.Protocol):
             self._write_transport(response['body'])
 
     def connection_made(self, transport):
+        """Called when the connection is made"""
         self.logger.info('Connection made at object %s', id(self))
         self.transport = transport
         self.keepalive = True
+
+    def connection_lost(self, exception):
+        """Called when the connection is lost or closed.
+
+        The argument is either an exception object or None. The latter means
+        a regular EOF is received, or the connection was aborted or closed by
+        this side of the connection.
+        """
+        if exception:
+            self.logger.exception('Connection lost!')
+        else:
+            self.logger.info('Connection lost')
 
     def data_received(self, data):
         self.logger.debug('Received data: %s', repr(data))
@@ -75,7 +88,9 @@ class HttpProtocol(asyncio.Protocol):
             self.handle_request(request)
         except InvalidRequestError as e:
             self._write_response(e.get_http_response())
-        self.transport.close()
+
+        if not self.keepalive:
+            self.transport.close()
 
     def parse_headers(self, data):
         self.logger.debug('Parsing headers')
@@ -86,10 +101,25 @@ class HttpProtocol(asyncio.Protocol):
         request = dict()
 
         # Parse request method and HTTP version
-        request['method'] = request_strings[0].split()[0]
-        request['version'] = request_strings[0].split()[2]
-        request['target'] = request_strings[0].split()[1]
+        method_line = request_strings[0].split()
 
+        # The first line has either 3 or 2 arguments
+        if not (2 <= len(method_line) <= 3):
+            self.keepalive = False  # We don't trust you
+            raise InvalidRequestError(400, 'Bad request')
+        # HTTP 0.9 isn't supported.
+        if len(method_line) == 2:
+            self.keepalive = False  # HTTP/0.9 won't support persistence
+            raise InvalidRequestError(505, "This server only supports HTTP/1.0"
+                                           "and HTTP/1.1")
+        else:
+            request['version'] = method_line[2]
+
+        # method
+        request['method'] = method_line[0]
+        request['target'] = method_line[1]
+
+        # Parse the headers
         for line in request_strings[1:]:
             if line == '':
                 break
@@ -110,6 +140,13 @@ class HttpProtocol(asyncio.Protocol):
             return (host.split(':')[0], path)
 
     def handle_request(self, request):
+
+        # Check if this is a persistent connection.
+        if request['version'] == 'HTTP/1.1':
+            self.keepalive = not request.get('Connection') == 'close'
+        elif request['version'] == 'HTTP/1.0':
+            self.keepalive = request.get('Connection') == 'Keep-Alive'
+
         # Check if we're getting a sane request
         if request['method'] not in ('GET'):
             raise InvalidRequestError(501, 'Method not implemented')
@@ -118,13 +155,6 @@ class HttpProtocol(asyncio.Protocol):
             raise InvalidRequestError(
                 505, 'Version not supported. Supported versions are: {}, {}'
                 .format('HTTP/1.0', 'HTTP/1.1'))
-
-        if request['version'] == 'HTTP/1.1' and not (
-            request.get('Connection') == 'Close'):
-          self.keepalive = True
-        elif request['version'] == 'HTTP/1.0' and (
-            request.get('Connection') == 'Keep-Alive'):
-          self.keepalive = True
 
         host, location = self._get_request_uri(request['target'])
 
@@ -135,6 +165,7 @@ class HttpProtocol(asyncio.Protocol):
             raise InvalidRequestError(404, 'Not Found')
 
         filename = os.path.join(self.folder, unquote(location))
+        self.logger.debug('trying to serve %s', filename)
 
         response = _get_response(version=request['version'])
 
