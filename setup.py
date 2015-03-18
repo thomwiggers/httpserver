@@ -30,7 +30,8 @@ requirements = [
 ]
 
 test_requirements = [
-    'pytest'
+    'pytest',
+    'selenium'
 ]
 
 setup(
