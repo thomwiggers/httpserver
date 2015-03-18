@@ -19,7 +19,7 @@ class TestHttpserver(unittest.TestCase):
     def setUp(self):
         self.fixtures_location = os.path.join(
             os.path.dirname(__file__), 'fixtures')
-        self.httpprotocol = HttpProtocol(self.fixtures_location)
+        self.httpprotocol = HttpProtocol('localhost', self.fixtures_location)
         self.transport = mock.MagicMock(spec=['write', 'close'])
         self.transport.write = mock.Mock()
         self.transport.close = mock.Mock()
@@ -96,7 +96,26 @@ class TestHttpserver(unittest.TestCase):
         head, body = response.split(b'\r\n\r\n', 1)
         # Do we have the 404 error
         assert head.startswith(b'HTTP/1.1 404 Not Found\r\n')
-        ##TODO more tests here
+        # TODO more tests here
+
+    def test_get_absoluteURI(self):
+        """HTTP 1.1 servers MUST accept absoluteURI form Request-URIs
+
+        RFC 2616 section 5.1.2
+        """
+        data = self._read_fixture('absolute_uri_request.crlf')
+        self.httpprotocol.data_received(data)
+        head, body = self._sent().split(b'\r\n\r\n', 1)
+
+        assert head.startswith(b'HTTP/1.1 200 OK\r\n')
+
+    def test_get_absoluteURI_404(self):
+        """We don't want to serve our index.html on GET nu.nl"""
+        data = self._read_fixture('absolute_uri_wrong_host.crlf')
+        self.httpprotocol.data_received(data)
+        head, body = self._sent().split(b'\r\n\r\n', 1)
+
+        assert head.startswith(b'HTTP/1.1 404 Not Found\r\n')
 
     def tearDown(self):
         pass

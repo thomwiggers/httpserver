@@ -9,6 +9,7 @@ import mimetypes
 
 import asyncio
 import logging
+import socket
 
 logger = logging.getLogger(__name__)
 
@@ -30,8 +31,9 @@ class HttpProtocol(asyncio.Protocol):
     Per connection made, one of these gets instantiated
     """
 
-    def __init__(self, folder):
+    def __init__(self, host, folder):
         self.folder = folder
+        self.host = host
         self.logger = logger.getChild('HttpProtocol {}'.format(id(self)))
         self.logger.debug('Instantiated HttpProtocol')
 
@@ -63,6 +65,7 @@ class HttpProtocol(asyncio.Protocol):
     def connection_made(self, transport):
         self.logger.info('Connection made at object %s', id(self))
         self.transport = transport
+        self.keepalive = True
 
     def data_received(self, data):
         self.logger.debug('Received data: %s', repr(data))
@@ -91,11 +94,20 @@ class HttpProtocol(asyncio.Protocol):
             if line == '':
                 break
             self.logger.debug("header: '{}'".format(line))
-            header, body = line.split(':', 1)
-            request[header] = body.lstrip()
+            header, body = line.split(': ', 1)
+            request[header] = body
 
         self.logger.debug('request object: %s', request)
         return request
+
+    def _get_request_uri(self, request_uri):
+        """Server MUST accept full URIs (5.1.2)"""
+        if request_uri.startswith('/'):
+            return (None, request_uri[1:])
+        elif '://' in request_uri:
+            locator = request_uri.split('://', 1)[1]
+            host, path = locator.split('/', 1)
+            return (host.split(':')[0], path)
 
     def handle_request(self, request):
         # Check if we're getting a sane request
@@ -107,8 +119,22 @@ class HttpProtocol(asyncio.Protocol):
                 505, 'Version not supported. Supported versions are: {}, {}'
                 .format('HTTP/1.0', 'HTTP/1.1'))
 
-        filename = os.path.join(self.folder,
-                                unquote(request['target'].lstrip('/')))
+        if request['version'] == 'HTTP/1.1' and not (
+            request.get('Connection') == 'Close'):
+          self.keepalive = True
+        elif request['version'] == 'HTTP/1.0' and (
+            request.get('Connection') == 'Keep-Alive'):
+          self.keepalive = True
+
+        host, location = self._get_request_uri(request['target'])
+
+        if host is None:
+            host = request.get('Host')
+
+        if host is not None and not host == self.host:
+            raise InvalidRequestError(404, 'Not Found')
+
+        filename = os.path.join(self.folder, unquote(location))
 
         response = _get_response(version=request['version'])
 

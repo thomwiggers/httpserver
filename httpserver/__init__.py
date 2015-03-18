@@ -12,7 +12,8 @@ def _start_server(bindaddr, port, folder):
     import asyncio
     from .httpserver import HttpProtocol
     loop = asyncio.get_event_loop()
-    coroutine = loop.create_server(lambda: HttpProtocol(folder), bindaddr,
+    coroutine = loop.create_server(lambda: HttpProtocol(hostname, folder),
+                                   bindaddr,
                                    port)
     server = loop.run_until_complete(coroutine)
 
@@ -28,18 +29,16 @@ def run(argv=None):  # pragma: no cover
 
     Usage: httpserver [options] [<folder>]
 
-    Default bind address: 127.0.0.1
-    Default port:         8080
-
     Options::
+        -h,--host=<hostname>        What host name to serve (default localhost)
         -a,--bindaddress=<address>  Address to bind to (default 127.0.0.1)
         -p,--port=<port>            Port to listen on (default 8080)
         -v,--verbose                Increase verbosity
         -d,--debug                  Print debug output
 
-    To listen on all (ipv4) addresses on port 80:
+    To serve /path/to/www on all (ipv4) addresses for host myserver on port 80:
 
-        httpserver -a 0.0.0.0 -p 80
+        httpserver -a 0.0.0.0 -p 80 -h myserver /path/to/www
     """
     import sys
     import os
@@ -61,4 +60,5 @@ def run(argv=None):  # pragma: no cover
     bindaddr = args['--bindaddress'] or '127.0.0.1'
     port = args['--port'] or '8080'
     folder = args['<folder>'] or os.getcwd()
-    _start_server(bindaddr, port, folder)
+    hostname = args['<hostname>'] or 'localhost'
+    _start_server(bindaddr, port, hostname, folder)
