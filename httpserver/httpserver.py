@@ -103,7 +103,9 @@ class HttpProtocol(asyncio.Protocol):
             raise InvalidRequestError(501, 'Method not implemented')
 
         if request['version'] not in ('HTTP/1.0', 'HTTP/1.1'):
-            raise InvalidRequestError(505, 'Version not supported')
+            raise InvalidRequestError(
+                505, 'Version not supported. Supported versions are: {}, {}'
+                .format('HTTP/1.0', 'HTTP/1.1'))
 
         filename = os.path.join(self.folder,
                                 unquote(request['target'].lstrip('/')))
