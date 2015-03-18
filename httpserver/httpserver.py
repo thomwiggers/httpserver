@@ -133,10 +133,12 @@ class HttpProtocol(asyncio.Protocol):
         self.logger.debug('request object: %s', request)
         return request
 
-    def _get_request_uri(self, request_uri):
+    def _get_request_uri(self, request):
         """Server MUST accept full URIs (5.1.2)"""
+        request_uri = request['target']
         if request_uri.startswith('/'):
-            return (None, request_uri[1:])
+            return (request.get('Host', 'localhost').split(':')[0],
+                    request_uri[1:])
         elif '://' in request_uri:
             locator = request_uri.split('://', 1)[1]
             host, path = locator.split('/', 1)
@@ -159,13 +161,14 @@ class HttpProtocol(asyncio.Protocol):
                 505, 'Version not supported. Supported versions are: {}, {}'
                 .format('HTTP/1.0', 'HTTP/1.1'))
 
-        host, location = self._get_request_uri(request['target'])
+        host, location = self._get_request_uri(request)
 
         if host is None:
             host = request.get('Host')
 
         if host is not None and not host == self.host:
-            raise InvalidRequestError(404, 'Not Found')
+            self.logger.info('Got a request for unknown host %s', host)
+            raise InvalidRequestError(404, "We don't serve this host")
 
         filename = os.path.join(self.folder, unquote(location))
         self.logger.debug('trying to serve %s', filename)
