@@ -47,3 +47,6 @@ docs/_build
 
 # Ghost logs
 ghostdriver.log
+
+# stuff
+.eggs/
