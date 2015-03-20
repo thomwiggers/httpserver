@@ -44,3 +44,6 @@ docs/_build
 
 # Rope
 .ropeproject/
+
+# Ghost logs
+ghostdriver.log
