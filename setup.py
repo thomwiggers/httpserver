@@ -37,11 +37,13 @@ test_requirements = [
 
 setup(
     name='httpserver',
-    version='0.1.0',
+    version='1.0.1',
     description="Asyncio implementation of an HTTP server",
     long_description=readme + '\n\n' + history,
-    author="Thom Wiggers",
-    author_email='thom@thomwiggers.nl',
+    author="Thom Wiggers and Luuk Scholten",
+    author_email='thom@thomwiggers.nl, info@luukscholten.com',
+    maintainer="Thom Wiggers",
+    maintainer_email='thom@thomwiggers.nl',
     url='https://github.com/thomwiggers/httpserver',
     packages=[
         'httpserver',
@@ -59,7 +61,7 @@ setup(
     zip_safe=False,
     keywords='httpserver',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Natural Language :: English',

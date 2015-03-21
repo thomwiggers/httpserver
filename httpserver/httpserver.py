@@ -1,21 +1,22 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals, print_function
-
-import os
-from urllib.parse import unquote
-from http.client import responses
-
-import mimetypes
-
 import asyncio
-import logging
 import hashlib
+import logging
+import mimetypes
+import os
 from datetime import datetime
+from http.client import responses
+from urllib.parse import unquote
+
 
 logger = logging.getLogger(__name__)
 
 
 def _get_response(**kwargs):
+    """Get a template response
+
+    Use kwargs to add things to the dictionary
+    """
     if 'code' not in kwargs:
         kwargs['code'] = 200
     if 'headers' not in kwargs:
@@ -33,18 +34,30 @@ class HttpProtocol(asyncio.Protocol):
     """
 
     def __init__(self, host, folder):
-        self.folder = folder
+        """Initialise a new instance.
+
+        Arguments:
+            host: the host to serve
+            folder: the folder to serve files from
+        """
         self.host = host
+        self.folder = folder
         self.logger = logger.getChild('HttpProtocol {}'.format(id(self)))
         self.logger.debug('Instantiated HttpProtocol')
 
     def _write_transport(self, string):
-        if isinstance(string, str):
+        """Convenience function to write to the transport"""
+        if isinstance(string, str):  # we need to convert to bytes
             self.transport.write(string.encode('utf-8'))
         else:
             self.transport.write(string)
 
     def _write_response(self, response):
+        """Write the response back to the client
+
+        Arguments:
+        response -- the dictionary containing the response.
+        """
         status = '{} {} {}\r\n'.format(response['version'],
                                        response['code'],
                                        responses[response['code']])
@@ -84,18 +97,22 @@ class HttpProtocol(asyncio.Protocol):
             self.logger.info('Connection lost')
 
     def data_received(self, data):
+        """Process received data from the socket
+
+        Called when we receive data
+        """
         self.logger.debug('Received data: %s', repr(data))
 
         try:
-            request = self.parse_headers(data)
-            self.handle_request(request)
+            request = self._parse_headers(data)
+            self._handle_request(request)
         except InvalidRequestError as e:
             self._write_response(e.get_http_response())
 
         if not self.keepalive:
             self.transport.close()
 
-    def parse_headers(self, data):
+    def _parse_headers(self, data):
         self.logger.debug('Parsing headers')
 
         request_strings = list(map(lambda x: x.decode('utf-8'),
@@ -108,10 +125,12 @@ class HttpProtocol(asyncio.Protocol):
 
         # The first line has either 3 or 2 arguments
         if not (2 <= len(method_line) <= 3):
+            self.logger.info('Got an invalid http header')
             self.keepalive = False  # We don't trust you
             raise InvalidRequestError(400, 'Bad request')
         # HTTP 0.9 isn't supported.
         if len(method_line) == 2:
+            self.logger.info('Got a HTTP/0.9 request')
             self.keepalive = False  # HTTP/0.9 won't support persistence
             raise InvalidRequestError(505, "This server only supports HTTP/1.0"
                                            "and HTTP/1.1")
@@ -120,13 +139,14 @@ class HttpProtocol(asyncio.Protocol):
 
         # method
         request['method'] = method_line[0]
+        # request URI
         request['target'] = method_line[1]
 
         # Parse the headers
         for line in request_strings[1:]:
-            if line == '':
+            if line == '':  # an empty line signals the end of the headers
                 break
-            self.logger.debug("header: '{}'".format(line))
+            self.logger.debug("header: '%s'", line)
             header, body = line.split(': ', 1)
             request[header] = body
 
@@ -134,17 +154,20 @@ class HttpProtocol(asyncio.Protocol):
         return request
 
     def _get_request_uri(self, request):
-        """Server MUST accept full URIs (5.1.2)"""
+        """Parse the request URI into something useful
+
+        Server MUST accept full URIs (5.1.2)"""
         request_uri = request['target']
-        if request_uri.startswith('/'):
+        if request_uri.startswith('/'):  # eg. GET /index.html
             return (request.get('Host', 'localhost').split(':')[0],
                     request_uri[1:])
-        elif '://' in request_uri:
+        elif '://' in request_uri:  # eg. GET http://rded.nl
             locator = request_uri.split('://', 1)[1]
             host, path = locator.split('/', 1)
             return (host.split(':')[0], path)
 
-    def handle_request(self, request):
+    def _handle_request(self, request):
+        """Process the headers and get the file"""
 
         # Check if this is a persistent connection.
         if request['version'] == 'HTTP/1.1':
@@ -155,7 +178,6 @@ class HttpProtocol(asyncio.Protocol):
         # Check if we're getting a sane request
         if request['method'] not in ('GET'):
             raise InvalidRequestError(501, 'Method not implemented')
-
         if request['version'] not in ('HTTP/1.0', 'HTTP/1.1'):
             raise InvalidRequestError(
                 505, 'Version not supported. Supported versions are: {}, {}'
@@ -163,9 +185,11 @@ class HttpProtocol(asyncio.Protocol):
 
         host, location = self._get_request_uri(request)
 
+        # We must ignore the Host header if a host is specified in GET
         if host is None:
             host = request.get('Host')
 
+        # Check if this request is intended for this webserver
         if host is not None and not host == self.host:
             self.logger.info('Got a request for unknown host %s', host)
             raise InvalidRequestError(404, "We don't serve this host")
@@ -173,27 +197,29 @@ class HttpProtocol(asyncio.Protocol):
         filename = os.path.join(self.folder, unquote(location))
         self.logger.debug('trying to serve %s', filename)
 
-        response = _get_response(version=request['version'])
-
         if os.path.isdir(filename):
             filename = os.path.join(filename, 'index.html')
 
         if not os.path.isfile(filename):
             raise InvalidRequestError(404, 'Not Found')
 
+        # Start response with version
+        response = _get_response(version=request['version'])
+        # Set Content-Type
         response['headers']['Content-Type'] = mimetypes.guess_type(
             filename)[0] or 'text/plain'
 
+        # Generate E-tag
         sha1 = hashlib.sha1()
-
         with open(filename, 'rb') as fp:
             response['body'] = fp.read()
             sha1.update(response['body'])
-
         etag = sha1.hexdigest()
 
         # Create 304 response if if-none-match matches etag
         if request.get('If-None-Match') == '"{}"'.format(etag):
+            # 304 responses shouldn't contain many headers we might already
+            # have added.
             response = _get_response(code=304)
 
         response['headers']['Etag'] = '"{}"'.format(etag)
@@ -202,11 +228,22 @@ class HttpProtocol(asyncio.Protocol):
 
 
 class InvalidRequestError(Exception):
+    """Raised for invalid requests. Contains the error code.
+
+    This exception can be transformed to a http response.
+    """
+
     def __init__(self, code, *args, **kwargs):
+        """Configures a new InvalidRequestError
+
+        Arguments:
+            code -- the HTTP error code
+        """
         super(InvalidRequestError, self).__init__(*args, **kwargs)
         self.code = code
 
     def get_http_response(self):
+        """Get this exception as an HTTP response suitable for output"""
         return _get_response(
             code=self.code,
             body=str(self),

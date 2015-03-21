@@ -5,10 +5,11 @@ import logging
 
 __author__ = 'Thom Wiggers, Luuk Scholten'
 __email__ = 'thom@thomwiggers.nl, info@luukscholten.com'
-__version__ = '0.1.0'
+__version__ = '1.0.0'
 
 
 def _start_server(bindaddr, port, hostname, folder):
+    """Starts an asyncio server"""
     import asyncio
     from .httpserver import HttpProtocol
     loop = asyncio.get_event_loop()
@@ -27,26 +28,39 @@ def _start_server(bindaddr, port, hostname, folder):
 def run(argv=None):  # pragma: no cover
     """Run the HTTP server
 
-    Usage: httpserver [options] [<folder>]
+    Usage:
+        httpserver [options] [<folder>]
 
     Options::
+
         -h,--host=<hostname>        What host name to serve (default localhost)
         -a,--bindaddress=<address>  Address to bind to (default 127.0.0.1)
         -p,--port=<port>            Port to listen on (default 8080)
-        -v,--verbose                Increase verbosity
-        -d,--debug                  Print debug output
+        -v,--verbose                Increase verbosity to INFO messages
+        -d,--debug                  Increase verbosity to DEBUG messages
+        --help                      Print this help message
 
-    To serve /path/to/www on all (ipv4) addresses for host myserver on port 80:
-
+    To serve /path/to/www on all (ipv4) addresses for host myserver
+    on port 80::
         httpserver -a 0.0.0.0 -p 80 -h myserver /path/to/www
     """
     import sys
     import os
     import docopt
     import textwrap
-    argv = argv or sys.argv[1:]
-    args = docopt.docopt(textwrap.dedent(run.__doc__), argv)
 
+    # Check for the version
+    if not sys.version_info >= (3, 4):
+        print('This python version is not supported. Please use python 3.4')
+        exit(1)
+
+    argv = argv or sys.argv[1:]
+
+    # remove some RST formatting
+    docblock = run.__doc__.replace('::', ':')
+    args = docopt.docopt(textwrap.dedent(docblock), argv)
+
+    # Set up logging
     level = logging.WARNING
     if args['--verbose']:
         level = logging.INFO

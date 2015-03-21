@@ -56,7 +56,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Asyncio HTTP Server'
-copyright = u'2015, Thom Wiggers'
+copyright = u'2015, Luuk Scholten and Thom Wiggers'
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout

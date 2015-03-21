@@ -8,13 +8,17 @@ Asyncio HTTP Server
 .. image:: https://img.shields.io/pypi/v/httpserver.svg
         :target: https://pypi.python.org/pypi/httpserver
 
-
-Asyncio implementation of an HTTP server
+Python 3.4 asyncio implementation of an HTTP server
 
 * Free software: BSD license
-* Documentation: https://httpserver.readthedocs.org.
+* Documentation: http://pythonhosted.org/httpserver/
 
 Features
 --------
 
-* TODO
+* Supports HTTP/1.1
+* Supports Keep-Alive
+* Serve a specific hostname only
+* Bind to an ip address
+* Uses asyncio
+* Installs an 'httpserver' command
