@@ -196,6 +196,9 @@ class TestHttpserver(unittest.TestCase):
     def test_timeout(self):
         """Test timing out"""
         assert not self.transport.close.called
+        # Test if the handle_timeout event closes the socket
+        # actual waiting is not possible because we mock the transport
+        # and don't start an event loop.
         self.httpprotocol._handle_timeout()
         assert self.transport.close.called
 
@@ -203,6 +206,7 @@ class TestHttpserver(unittest.TestCase):
         data = self._read_fixture('get_index_persistent.crlf')
         self.httpprotocol.data_received(data)
         assert not self.transport.close.called
+        # Test if the handle_timeout event closes the socket
         self.httpprotocol._handle_timeout()
         assert self.transport.close.called
 
