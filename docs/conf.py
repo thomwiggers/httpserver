@@ -202,6 +202,12 @@ latex_elements = {
 
     # Additional stuff for the LaTeX preamble.
     # 'preamble': '',
+
+    # Use article as underlying document class.
+    'docclass': 'article',
+
+    'classoptions': ',oneside,openany',
+    'babel': r'\usepackage[british,english]{babel}'
 }
 
 # Grouping the document tree into LaTeX files. List of tuples

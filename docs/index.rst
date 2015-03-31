@@ -6,23 +6,14 @@
 Welcome to Asyncio HTTP Server's documentation!
 ======================================
 
-Contents:
-
 .. toctree::
    :maxdepth: 2
 
    readme
    installation
    usage
+   design_considerations
    modules
    contributing
    authors
    history
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
