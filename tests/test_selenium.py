@@ -10,6 +10,7 @@ Tests the http server with a real browser.
 import os
 import unittest
 import multiprocessing
+import time
 
 from httpserver import _start_server
 
@@ -18,7 +19,7 @@ from selenium import webdriver
 _host = 'localhost'
 _ip = '127.0.0.1'
 _port = 1234
-_dir = os.path.join(os.path.dirname(__file__), 'fixtures')
+_dir = os.path.join(os.path.dirname(__file__), 'fixtures/selenium')
 
 
 class TestSelenium(unittest.TestCase):
@@ -44,11 +45,13 @@ class TestSelenium(unittest.TestCase):
     def test_get_index(self):
         hostname = 'http://{}:{}'.format(_host, _port)
         self.driver.get(hostname)
+        time.sleep(3)
         assert 'Index' in self.driver.title
 
     def test_get_404(self):
         path = 'http://{}:{}/notfound'.format(_host, _port)
         self.driver.get(path)
+        time.sleep(3)
         assert 'Not Found' in self.driver.page_source
 
     def tearDown(self):
