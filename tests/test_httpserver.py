@@ -105,7 +105,7 @@ class TestHttpserver(unittest.TestCase):
         head, body = response.split(b'\r\n\r\n', 1)
         # Do we have the 404 error
         assert head.startswith(b'HTTP/1.1 404 Not Found\r\n')
-        # TODO more tests here
+        assert self.transport.close.called
 
     def test_get_absoluteURI(self):
         """HTTP 1.1 servers MUST accept absoluteURI form Request-URIs
