@@ -37,7 +37,7 @@ test_requirements = [
 
 setup(
     name='httpserver',
-    version='1.0.1',
+    version='1.1.0',
     description="Asyncio implementation of an HTTP server",
     long_description=readme + '\n\n' + history,
     author="Thom Wiggers and Luuk Scholten",

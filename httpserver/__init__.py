@@ -5,7 +5,7 @@ import logging
 
 __author__ = 'Thom Wiggers, Luuk Scholten'
 __email__ = 'thom@thomwiggers.nl, info@luukscholten.com'
-__version__ = '1.0.0'
+__version__ = '1.1.0'
 
 
 def _start_server(bindaddr, port, hostname, folder):
@@ -39,6 +39,7 @@ def run(argv=None):  # pragma: no cover
         -v,--verbose                Increase verbosity to INFO messages
         -d,--debug                  Increase verbosity to DEBUG messages
         --help                      Print this help message
+        --version                   Print the version
 
     To serve /path/to/www on all (ipv4) addresses for host myserver
     on port 80::
@@ -59,6 +60,12 @@ def run(argv=None):  # pragma: no cover
     # remove some RST formatting
     docblock = run.__doc__.replace('::', ':')
     args = docopt.docopt(textwrap.dedent(docblock), argv)
+
+    if args['--version']:
+        print("httpserver version {} by {}".format(
+            __version__,
+            __author__))
+        exit(0)
 
     # Set up logging
     level = logging.WARNING

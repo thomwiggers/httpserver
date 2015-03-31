@@ -18,7 +18,8 @@ from httpserver.httpserver import HttpProtocol
 
 class TestHttpserver(unittest.TestCase):
 
-    def setUp(self):
+    @mock.patch('asyncio.get_event_loop')
+    def setUp(self, patch):
         """Set up an HttpProtocol instance with a fake transport"""
         self.fixtures_location = os.path.join(
             os.path.dirname(__file__), 'fixtures')
@@ -191,6 +192,19 @@ class TestHttpserver(unittest.TestCase):
         assert head.startswith(b'HTTP/1.1 304 Not Modified\r\n')
         assert b'Date: ' in head
         assert 'Etag: "{}"'.format(etag).encode('utf-8') in head
+
+    def test_timeout(self):
+        """Test timing out"""
+        assert not self.transport.close.called
+        self.httpprotocol._handle_timeout()
+        assert self.transport.close.called
+
+    def test_timeout_request(self):
+        data = self._read_fixture('get_index_persistent.crlf')
+        self.httpprotocol.data_received(data)
+        assert not self.transport.close.called
+        self.httpprotocol._handle_timeout()
+        assert self.transport.close.called
 
 
 if __name__ == '__main__':

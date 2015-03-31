@@ -33,7 +33,7 @@ class HttpProtocol(asyncio.Protocol):
     Per connection made, one of these gets instantiated
     """
 
-    def __init__(self, host, folder):
+    def __init__(self, host, folder, event_loop=None, timeout=15):
         """Initialise a new instance.
 
         Arguments:
@@ -44,6 +44,9 @@ class HttpProtocol(asyncio.Protocol):
         self.folder = folder
         self.logger = logger.getChild('HttpProtocol {}'.format(id(self)))
         self.logger.debug('Instantiated HttpProtocol')
+        self._loop = event_loop or asyncio.get_event_loop()
+        self._timeout = timeout
+        self._timeout_handle = None
 
     def _write_transport(self, string):
         """Convenience function to write to the transport"""
@@ -84,6 +87,11 @@ class HttpProtocol(asyncio.Protocol):
         self.transport = transport
         self.keepalive = True
 
+        if self._timeout:
+            self.logger.debug('Registering timeout event')
+            self._timout_handle = self._loop.call_later(
+                self._timeout, self._handle_timeout)
+
     def connection_lost(self, exception):
         """Called when the connection is lost or closed.
 
@@ -110,7 +118,15 @@ class HttpProtocol(asyncio.Protocol):
             self._write_response(e.get_http_response())
 
         if not self.keepalive:
+            if self._timeout_handle:
+                self._timeout_handle.cancel()
             self.transport.close()
+
+        if self._timeout and self._timeout_handle:
+            self.logger.debug('Delaying timeout event')
+            self._timeout_handle.cancel()
+            self._timout_handle = self._loop.call_later(
+                self._timeout, self._handle_timeout)
 
     def _parse_headers(self, data):
         self.logger.debug('Parsing headers')
@@ -225,6 +241,11 @@ class HttpProtocol(asyncio.Protocol):
         response['headers']['Etag'] = '"{}"'.format(etag)
 
         self._write_response(response)
+
+    def _handle_timeout(self):
+        """Handle a timeout"""
+        self.logger.info('Request timed out')
+        self.transport.close()
 
 
 class InvalidRequestError(Exception):
