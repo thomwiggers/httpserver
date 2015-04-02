@@ -4,6 +4,7 @@ import hashlib
 import logging
 import mimetypes
 import os
+import re
 from datetime import datetime
 from http.client import responses
 from urllib.parse import unquote
@@ -221,6 +222,19 @@ class HttpProtocol(asyncio.Protocol):
 
         # Start response with version
         response = _get_response(version=request['version'])
+
+        # timeout negotiation
+        match = re.match(r'timeout=(\d+)', request.get('Keep-Alive', ''))
+        if match is not None:
+            requested_timeout = int(match.group(1))
+            if requested_timeout < self._timeout:
+                self._timeout = requested_timeout
+
+        # tell the client our timeout
+        if self.keepalive:
+            response['headers'][
+                'Keep-Alive'] = 'timeout={}'.format(self._timeout)
+
         # Set Content-Type
         response['headers']['Content-Type'] = mimetypes.guess_type(
             filename)[0] or 'text/plain'

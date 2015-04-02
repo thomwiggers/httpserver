@@ -135,6 +135,7 @@ class TestHttpserver(unittest.TestCase):
             self.httpprotocol.data_received(data)
             head, body = self._sent().split(b'\r\n\r\n', 1)
             assert head.startswith(b'HTTP/1.1 200 OK')
+            assert b'Keep-Alive' in head
             assert body == index
             assert not self.transport.close.called
 
@@ -192,6 +193,24 @@ class TestHttpserver(unittest.TestCase):
         assert head.startswith(b'HTTP/1.1 304 Not Modified\r\n')
         assert b'Date: ' in head
         assert 'Etag: "{}"'.format(etag).encode('utf-8') in head
+
+    def test_send_keepalive(self):
+        """Send a lower keepalive"""
+        request = self._read_fixture('get_keepalive_2.crlf')
+        self.httpprotocol.data_received(request)
+        response = self._sent()
+        head, body = response.split(b'\r\n\r\n', 1)
+        assert b'timeout=2' in head
+        assert self.httpprotocol._timeout == 2
+
+    def test_send_keepalive_longer(self):
+        """Server sends a lower timeout if we request a too long one"""
+        request = self._read_fixture('get_keepalive_2000.crlf')
+        self.httpprotocol.data_received(request)
+        response = self._sent()
+        head, body = response.split(b'\r\n\r\n', 1)
+        assert b'timeout=15' in head
+        assert self.httpprotocol._timeout == 15
 
     def test_timeout(self):
         """Test timing out"""
