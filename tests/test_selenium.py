@@ -24,6 +24,10 @@ _dir = os.path.join(os.path.dirname(__file__), 'fixtures/selenium')
 
 class TestSelenium(unittest.TestCase):
 
+    def _sleep(self):
+        if not isinstance(self.driver, webdriver.PhantomJS):
+            time.sleep(3)
+
     @classmethod
     def setUpClass(cls):
         """Set up selenium"""
@@ -34,6 +38,7 @@ class TestSelenium(unittest.TestCase):
             cls.driver = webdriver.Chrome()
         else:
             cls.driver = webdriver.Firefox()
+        cls.driver.implicitly_wait(3)
         super(TestSelenium, cls).setUpClass()
 
     def setUp(self):
@@ -45,13 +50,13 @@ class TestSelenium(unittest.TestCase):
     def test_get_index(self):
         hostname = 'http://{}:{}'.format(_host, _port)
         self.driver.get(hostname)
-        time.sleep(3)
-        assert 'Index' in self.driver.title
+        self._sleep()
+        assert '<title>Index</title>' in self.driver.page_source
 
     def test_get_404(self):
         path = 'http://{}:{}/notfound'.format(_host, _port)
         self.driver.get(path)
-        time.sleep(3)
+        self._sleep()
         assert 'Not Found' in self.driver.page_source
 
     def tearDown(self):
