@@ -13,6 +13,7 @@ Welcome to Asyncio HTTP Server's documentation!
    installation
    usage
    design_considerations
+   protocol_assumptions
    modules
    contributing
    authors
