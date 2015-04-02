@@ -28,20 +28,18 @@ class TestSelenium(unittest.TestCase):
         if not isinstance(self.driver, webdriver.PhantomJS):
             time.sleep(3)
 
-    @classmethod
-    def setUpClass(cls):
+    def setUp(self):
         """Set up selenium"""
+        super(TestSelenium, self).setUp()
         driver = os.environ.get("SELENIUM_WEBDRIVER", "Firefox")
         if driver == "phantomjs":
-            cls.driver = webdriver.PhantomJS()
+            self.driver = webdriver.PhantomJS()
         elif driver == "chrome":
-            cls.driver = webdriver.Chrome()
+            self.driver = webdriver.Chrome()
         else:
-            cls.driver = webdriver.Firefox()
-        cls.driver.implicitly_wait(3)
-        super(TestSelenium, cls).setUpClass()
+            self.driver = webdriver.Firefox()
+        self.driver.implicitly_wait(3)
 
-    def setUp(self):
         self.process = multiprocessing.Process(
             target=_start_server,
             args=(_ip, _port, _host, _dir))
@@ -50,6 +48,7 @@ class TestSelenium(unittest.TestCase):
     def test_get_index(self):
         hostname = 'http://{}:{}'.format(_host, _port)
         self.driver.get(hostname)
+        self.driver.find_elements_by_tag_name('title')
         self._sleep()
         assert '<title>Index</title>' in self.driver.page_source
 
@@ -60,12 +59,9 @@ class TestSelenium(unittest.TestCase):
         assert 'Not Found' in self.driver.page_source
 
     def tearDown(self):
+        super(TestSelenium, self).tearDown()
         self.process.terminate()
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.driver.quit()
-        super(TestSelenium, cls).tearDownClass()
+        self.driver.quit()
 
 if __name__ == '__main__':
     unittest.main()
