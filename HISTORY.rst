@@ -10,6 +10,7 @@ History
 * Add default timeout of 15 seconds to httpserver
 * Negotiate with the Keep-Alive header
 * Add ``--version`` command
+* Change documentation theme to ``alabaster``
 
 1.0.1 (2015-03-21)
 ---------------------
