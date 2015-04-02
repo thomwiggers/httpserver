@@ -14,6 +14,7 @@ Welcome to Asyncio HTTP Server's documentation!
    usage
    design_considerations
    protocol_assumptions
+   tests
    modules
    contributing
    authors
