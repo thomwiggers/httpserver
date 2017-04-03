@@ -63,5 +63,6 @@ class TestSelenium(unittest.TestCase):
         self.process.terminate()
         self.driver.quit()
 
+
 if __name__ == '__main__':
     unittest.main()
