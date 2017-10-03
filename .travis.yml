@@ -3,18 +3,36 @@
 language: python
 sudo: false
 
+addons:
+  chrome: "stable"
+  firefox: "latest"
+
 python:
   - "3.4"
   - "3.5"
   - "3.6"
   - "nightly"
 
+firefox:
+  - "latest"
+
+chrome:
+  - "stable"
+
+matrix:
+  allow_failures:
+    - python: latest
+
 env:
   - SELENIUM_WEBDRIVER=phantomjs
+  - SELENIUM_WEBDRIVER=firefox
+  - SELENIUM_WEBDRIVER=chrome
 
-# command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install:
   - pip install -r requirements.txt
 
 # command to run tests, e.g. python setup.py test
 script: python setup.py test
+
+cache:
+  - "pip"
