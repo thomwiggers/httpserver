@@ -20,13 +20,14 @@ _host = 'localhost'
 _ip = '127.0.0.1'
 _port = 1234
 _dir = os.path.join(os.path.dirname(__file__), 'fixtures/selenium')
+WAIT_TIME = 4
 
 
 class TestSelenium(unittest.TestCase):
 
     def _sleep(self):
         if not isinstance(self.driver, webdriver.PhantomJS):
-            time.sleep(3)
+            time.sleep(WAIT_TIME)
 
     def setUp(self):
         """Set up selenium"""
@@ -38,7 +39,7 @@ class TestSelenium(unittest.TestCase):
             self.driver = webdriver.Chrome()
         else:
             self.driver = webdriver.Firefox()
-        self.driver.implicitly_wait(3)
+        self.driver.implicitly_wait(WAIT_TIME)
 
         self.process = multiprocessing.Process(
             target=_start_server,
