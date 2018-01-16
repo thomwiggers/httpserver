@@ -3,18 +3,50 @@
 language: python
 sudo: false
 
+addons:
+  firefox: "latest"
+  chrome: "stable"
+
 python:
   - "3.4"
   - "3.5"
   - "3.6"
   - "nightly"
 
-env:
-  - SELENIUM_WEBDRIVER=phantomjs
+firefox:
+  - "latest"
 
-# command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
+chrome:
+  - "stable"
+
+matrix:
+  allow_failures:
+    - python: latest
+
+env:
+  global:
+    - GECKODRIVER_VERSION=v0.19.1
+  matrix:
+    - SELENIUM_WEBDRIVER=phantomjs
+    - SELENIUM_WEBDRIVER=firefox
+    - SELENIUM_WEBDRIVER=chrome
+
+before_install:
+  - wget -O - "https://github.com/mozilla/geckodriver/releases/download/${GECKODRIVER_VERSION}/geckodriver-${GECKODRIVER_VERSION}-linux64.tar.gz" | tar xz
+  - export CHROMEDRIVER_VERSION=$(curl https://chromedriver.storage.googleapis.com/LATEST_RELEASE)
+  - wget -O x.zip "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip" && unzip x.zip
+  - chmod +x geckodriver chromedriver
+  - mkdir ~/drivers/
+  - mv geckodriver chromedriver ~/drivers/
+  - export PATH=$PATH:~/drivers
+
 install:
   - pip install -r requirements.txt
 
 # command to run tests, e.g. python setup.py test
-script: python setup.py test
+script: travis_retry python setup.py test
+
+cache:
+  - "pip"
+
+#  vim: set ts=2 sw=2 tw=0 et :
