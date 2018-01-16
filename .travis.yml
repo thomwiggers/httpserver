@@ -24,9 +24,20 @@ matrix:
     - python: latest
 
 env:
-  - SELENIUM_WEBDRIVER=phantomjs
-  - SELENIUM_WEBDRIVER=firefox
-  - SELENIUM_WEBDRIVER=chrome
+  global:
+    - GECKODRIVER_VERSION=v0.19.1
+  matrix:
+    - SELENIUM_WEBDRIVER=phantomjs
+    - SELENIUM_WEBDRIVER=firefox
+    - SELENIUM_WEBDRIVER=chrome
+
+before_install:
+  - wget -O - https://github.com/mozilla/geckodriver/releases/download/${GECKODRIVER_VERSION}/geckodriver-${GECKODRIVER_VERSION}-linux64.tar.gz | tar xz
+  - wget -O x.zip https://chromedriver.storage.googleapis.com/2.35/chromedriver_linux64.zip && unzip x.zip
+  - chmod +x geckodriver chromedriver
+  - mkdir ~/drivers/
+  - mv geckodriver chromedriver ~/drivers/
+  - export PATH=$PATH:~/drivers
 
 install:
   - pip install -r requirements.txt

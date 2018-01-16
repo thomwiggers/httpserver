@@ -57,14 +57,13 @@ class TestSelenium(unittest.TestCase):
             self.driver = webdriver.PhantomJS()
         elif driver == "chrome":
             options = webdriver.chrome.options.Options()
-            options.add_argument('--headless')
-            options.add_argument('--disable-gpu')
+            options.set_headless()
             options.binary_location = _which('google-chrome-stable')
             self.driver = webdriver.Chrome(chrome_options=options)
         else:
             options = webdriver.firefox.options.Options()
-            options.add_argument('-headless')
-            options.binary_location = _which('firefox')
+            options.set_headless()
+            options.binary = _which('firefox')
             self.driver = webdriver.Firefox(firefox_options=options)
         self.driver.implicitly_wait(WAIT_TIME)
 

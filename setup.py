@@ -31,7 +31,7 @@ requirements = [
 
 test_requirements = [
     'pytest',
-    'selenium>=3.5',
+    'selenium>=3.8',
     'freezegun',
 ]
 
