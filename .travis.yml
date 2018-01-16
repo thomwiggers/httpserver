@@ -32,8 +32,9 @@ env:
     - SELENIUM_WEBDRIVER=chrome
 
 before_install:
-  - wget -O - https://github.com/mozilla/geckodriver/releases/download/${GECKODRIVER_VERSION}/geckodriver-${GECKODRIVER_VERSION}-linux64.tar.gz | tar xz
-  - wget -O x.zip https://chromedriver.storage.googleapis.com/2.35/chromedriver_linux64.zip && unzip x.zip
+  - wget -O - "https://github.com/mozilla/geckodriver/releases/download/${GECKODRIVER_VERSION}/geckodriver-${GECKODRIVER_VERSION}-linux64.tar.gz" | tar xz
+  - export CHROMEDRIVER_VERSION=$(curl https://chromedriver.storage.googleapis.com/LATEST_RELEASE)
+  - wget -O x.zip "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip" && unzip x.zip
   - chmod +x geckodriver chromedriver
   - mkdir ~/drivers/
   - mv geckodriver chromedriver ~/drivers/
@@ -43,7 +44,7 @@ install:
   - pip install -r requirements.txt
 
 # command to run tests, e.g. python setup.py test
-script: python setup.py test
+script: travis_retry python setup.py test
 
 cache:
   - "pip"
