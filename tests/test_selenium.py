@@ -26,8 +26,7 @@ WAIT_TIME = 4
 class TestSelenium(unittest.TestCase):
 
     def _sleep(self):
-        if not isinstance(self.driver, webdriver.PhantomJS):
-            time.sleep(WAIT_TIME)
+        time.sleep(WAIT_TIME)
 
     def setUp(self):
         """Set up selenium"""
