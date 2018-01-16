@@ -58,6 +58,8 @@ class TestSelenium(unittest.TestCase):
         elif driver == "chrome":
             options = webdriver.chrome.options.Options()
             options.set_headless()
+            if os.environ.get('CI'):  # Travis bug
+                options.add_argument('--no-sandbox')
             options.binary_location = _which('google-chrome-stable')
             self.driver = webdriver.Chrome(chrome_options=options)
         else:

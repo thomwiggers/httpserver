@@ -4,8 +4,8 @@ language: python
 sudo: false
 
 addons:
-  chrome: "stable"
   firefox: "latest"
+  chrome: "stable"
 
 python:
   - "3.4"
